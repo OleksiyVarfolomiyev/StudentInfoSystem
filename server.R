@@ -13,6 +13,11 @@ library(xlsx)
 if (!file.exists("data")) dir.create("data")
 
 fileName = "./data/MATH_111-105_Roster.xlsx"
+fileUrl <- "https://docs.google.com/spreadsheets/d/1f9IFGVNPdTsvFF7H1gjI1aRtlzOY96URMg_STNONVFQ/pub?output=xlsx"
+download.file(fileUrl, destfile = fileName, method = "curl")
+
+dateDownloaded <- date()
+dateDownloaded 
 
 ## Read Data
 nCols <- 20
@@ -132,6 +137,29 @@ shinyServer(
           labs(colour = "Name") +
           theme_bw()
       })
+    
+    # Grade Modeler
+  #  sliderValues <- reactive({
+  #    Value <- as.character( dat[dat$ID == input$studentID, "Score"] +
+  #      input$sliderAssignmentsAve  + 0.2* input$sliderExam3  + 0.3* input$sliderFinal )
+     # Value <- as.character(cut(as.numeric(Value), 
+      #                 c(0, 60, 65, 72, 77, 83, 88, Inf), right = FALSE, labels = c("F", "D", "C", "C+", "B", "B+", "A")))
+  #  })
+    
+    output$projectedGrade <- renderText({
+      as.character( dat[dat$ID == {input$studentID}, "Score"] +
+                                             {input$sliderAssignmentsAve}  + 0.2* {input$sliderExam3}  + 0.3* {input$sliderFinal} )
+    })
+      #renderText({
+      #sliderValues()
+    #})
+    
+    output$projectedLetterGrade <- renderText({
+      as.character(cut(as.numeric(as.character( dat[dat$ID == {input$studentID}, "Score"] +
+      {input$sliderAssignmentsAve}  + 0.2* {input$sliderExam3}  + 0.3* {input$sliderFinal} )), 
+                  c(0, 60, 65, 72, 77, 83, 88, Inf), right = FALSE, labels = c("F", "D", "C", "C+", "B", "B+", "A")))
+    })  
+    ############
     
     # CurvedScore Histogram
      output$histCurvedScore <- renderPlot({
