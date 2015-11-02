@@ -13,7 +13,6 @@ library(xlsx)
 if (!file.exists("data")) dir.create("data")
 
 fileName = "./data/MATH_111-105_Roster.xlsx"
-fileUrl <- "https://docs.google.com/spreadsheets/d/1f9IFGVNPdTsvFF7H1gjI1aRtlzOY96URMg_STNONVFQ/pub?output=xlsx"
 download.file(fileUrl, destfile = fileName, method = "curl")
 
 dateDownloaded <- date()
