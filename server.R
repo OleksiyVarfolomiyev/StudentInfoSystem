@@ -11,13 +11,8 @@ library(xlsx)
 
 ## Download Data
 if (!file.exists("data")) dir.create("data")
-#fileUrl <- "https://docs.google.com/spreadsheets/d/1tI5lHVKL5v8YvD4pEgmb-2rQ3ZJwzFuGk1hdeI4X2sA/pub?output=xlsx"
-fileUrl <- "https://docs.google.com/spreadsheets/d/1f9IFGVNPdTsvFF7H1gjI1aRtlzOY96URMg_STNONVFQ/pub?output=xlsx"
-fileName = "./data/MATH_111-105_Roster.xlsx"
-download.file(fileUrl, destfile = fileName, method = "curl")
 
-dateDownloaded <- date()
-dateDownloaded 
+fileName = "./data/MATH_111-105_Roster.xlsx"
 
 ## Read Data
 nCols <- 20
