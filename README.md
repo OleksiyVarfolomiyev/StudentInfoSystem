@@ -3,9 +3,7 @@
 
 [Watch Presentation]( http://rpubs.com/AlexVarfolomiyev/StudentInformationSystem)
 
-[Run Shiny App]( https://oleksiy-varfolomiyev.shinyapps.io/Math_111-105)
-
-[See App Data](http://bit.ly/1Rt6QHR)
+[Run Shiny App]( http://bit.ly/20iFmdF)
 
 # Motivation
 
@@ -17,10 +15,9 @@
 
 # Guide
 
-[Run Shiny App]( https://oleksiy-varfolomiyev.shinyapps.io/Math_111-105)
+[Run Shiny App]( http://bit.ly/20iFmdF)
 
-Login with any student ID
-[See App Data](http://bit.ly/1Rt6QHR)
+Login with any student ID, e.g. 31380970
 
 # Enjoy!
 
