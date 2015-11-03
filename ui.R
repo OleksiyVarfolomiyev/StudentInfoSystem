@@ -45,14 +45,12 @@ shinyUI(
         tableOutput("tabScores"),
         plotOutput('plotScores'),
         plotOutput('boxplotScores'),
-
-        h2('Scores Histograms'),
-        plotOutput('histCurvedScore'),
-        plotOutput('histExamAve'),
-        plotOutput('histQuiz'),
-        plotOutput('histHW'),
-        plotOutput('histOnlineHW'),
-        plotOutput('histMATLAB')
+       
+       h2('Scores Histograms'),
+       plotOutput('histScores'), 
+       
+       h2('Assignments Histograms'),
+       plotOutput('histAssignments')
       )
     ) # mainPanel
 #  )# conditionalPanel

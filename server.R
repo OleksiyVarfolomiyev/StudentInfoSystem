@@ -6,60 +6,22 @@ library(ggplot2)
 library(reshape2)
 library(plyr)
 library(xlsx)
+library(gridExtra)
 
+source('dataRead.R', local = T)
+source('multiplot.R', local = T)
+
+nStudents <- 37
+# Read Data
 #dat <<- dat
-
-## Download Data
-if (!file.exists("data")) dir.create("data")
-
-fileName = "./data/MATH_111-105_Roster.xlsx"
-download.file(fileUrl, destfile = fileName, method = "curl")
-
-dateDownloaded <- date()
-dateDownloaded 
-
-## Read Data
-nCols <- 20
-nStudents <- 38
-dat = read.xlsx2(fileName, endRow = nStudents+2, colIndex = seq(1,nCols), sheetName = "MATH111-105", stringsAsFactors = F)
-
-## Quiz 10
-datQuizzes = read.xlsx2(fileName, endRow = nStudents+2, sheetName = "Quizzes", stringsAsFactors = F)
-# Remove '%'
-datQuizzes <- as.data.frame(sapply(datQuizzes, gsub, pattern="%", replacement=""), stringsAsFactors = F)
-
-# Convert to integer
-temp = datQuizzes$Name
-datQuizzes <- as.data.frame(sapply(datQuizzes, as.integer))
-datQuizzes$Name <- temp
-datQuizzes[is.na(datQuizzes)] <- 0
-##
-
-
-## Process data 
-# Rename columns
-dat <- rename(dat,c("C2" = "Exam2", "C1" = "Exam1", "C3" = "Exam3", "F" = "Final", "M" = "MATLAB"))
-
-# Remove '%'
-dat <- as.data.frame(sapply(dat, gsub, pattern="%", replacement=""), stringsAsFactors = F)
-
-# Add Rank column
-dat$Rank = which(dat$ID==dat$ID)
-dat[nrow(dat), ]$Rank = ""
-
-# Convert to integer
-temp = dat$Name
-dat <- as.data.frame(sapply(dat, as.integer))
-#dat$Name = as.character(dat$Name)
-dat$Name <- temp
-dat$Top <- paste(dat$Top, '%')
-dat[nrow(dat), ]$Top <- ''
+dat = dataRead(nStudents = nStudents, sheetName = "MATH111-105")
+datQuizzes = dataRead(nStudents = nStudents, sheetName = "Quizzes")
 
 # Init ggplot colors
   n = 3
   hues = seq(15, 375, length = n + 1)
   ggplotCol <- hcl(h = hues, l = 65, c = 100)[1:n]
-  
+
 ############################################  
 
 shinyServer(
@@ -75,7 +37,7 @@ shinyServer(
     output$histRecentQuiz <- renderPlot({
           ggplot(datQuizzes[1:nStudents, ], aes(Q10)) + 
             geom_histogram(aes(fill=..count..), colour = "black", 
-                           breaks = seq(min(datQuizzes$Q10), max(datQuizzes$Q10), by = 25)) + 
+                           breaks = seq(min(datQuizzes$Q10), max(datQuizzes$Q10), by = 24)) + 
             geom_density(colour = "black") + 
             geom_vline(xintercept = datQuizzes[datQuizzes$ID == {input$studentID}, ]$Q10, 
                        colour = ggplotCol[2], show_guide = T) +
@@ -138,32 +100,26 @@ shinyServer(
       })
     
     # Grade Modeler
-  #  sliderValues <- reactive({
-  #    Value <- as.character( dat[dat$ID == input$studentID, "Score"] +
-  #      input$sliderAssignmentsAve  + 0.2* input$sliderExam3  + 0.3* input$sliderFinal )
-     # Value <- as.character(cut(as.numeric(Value), 
-      #                 c(0, 60, 65, 72, 77, 83, 88, Inf), right = FALSE, labels = c("F", "D", "C", "C+", "B", "B+", "A")))
-  #  })
-    
+
     output$projectedGrade <- renderText({
       as.character( dat[dat$ID == {input$studentID}, "Score"] +
                                              {input$sliderAssignmentsAve}  + 0.2* {input$sliderExam3}  + 0.3* {input$sliderFinal} )
     })
-      #renderText({
-      #sliderValues()
-    #})
-    
+
     output$projectedLetterGrade <- renderText({
       as.character(cut(as.numeric(as.character( dat[dat$ID == {input$studentID}, "Score"] +
       {input$sliderAssignmentsAve}  + 0.2* {input$sliderExam3}  + 0.3* {input$sliderFinal} )), 
                   c(0, 60, 65, 72, 77, 83, 88, Inf), right = FALSE, labels = c("F", "D", "C", "C+", "B", "B+", "A")))
     })  
-    ############
-    
+
+    # Plot Scores Histograms
+
+    output$histScores <- renderPlot({
     # CurvedScore Histogram
-     output$histCurvedScore <- renderPlot({
+    histCurvedScore <- 
       ggplot(dat[1:nStudents, ], aes(CurvedScore)) + 
-        geom_histogram(aes(fill=..count..), colour = "black", breaks = seq(min(dat$CurvedScore), max(dat$CurvedScore), by = 7)) + 
+        geom_histogram(aes(fill=..count..), colour = "black", 
+                       breaks = seq(min(dat$CurvedScore), max(dat$CurvedScore), by = 12)) + 
         geom_density(colour = "black") + 
         geom_vline(xintercept = dat[dat$ID == {input$studentID}, ]$CurvedScore, colour = ggplotCol[2]) +
         geom_vline(xintercept = mean(dat$CurvedScore), colour = ggplotCol[1]) +
@@ -171,71 +127,96 @@ shinyServer(
         ylab("# of students with the CurvedScore in the range")+
         ggtitle("CurvedScore Histogram")+
         theme_bw()
-    })
-     
+
     # Exam Average Histogram
-    output$histExamAve <- renderPlot({
+    histExamAve <- 
       ggplot(dat[1:nStudents, ], aes(ExamAve)) + 
-        geom_histogram(aes(fill=..count..), colour = "black", breaks = seq(min(dat$ExamAve), max(dat$ExamAve), by = 9) ) + 
-        scale_fill_gradient("Count", low = "gold4", high = "gold")+
-        geom_vline(xintercept = dat[dat$ID == {input$studentID}, ]$ExamAve, colour = ggplotCol[2]) +
+        geom_histogram(aes(fill=..count..), colour = "black", 
+                       breaks = seq(min(dat$ExamAve), max(dat$ExamAve), by = 12) ) + 
+        scale_fill_gradient("Count", low = "mediumorchid4", high = "mediumorchid")+
+        geom_vline(xintercept = dat[dat$ID == {input$studentID}, ]$ExamAve, 
+                   colour = ggplotCol[2]) +
         geom_vline(xintercept = mean(dat$ExamAve), colour = ggplotCol[1]) +
         xlab("ExamAve Score") + 
         ylab("# of students with the score in the range")+
         ggtitle("ExamAve Score Histogram")+
         theme_bw()
-    })   
     
-    # Quiz Average Histogram
-    output$histQuiz <- renderPlot({
-      ggplot(dat[1:nStudents, ], aes(Quiz)) + 
-        geom_histogram(aes(fill=..count..), colour = "black", breaks=seq(min(dat$Quiz), max(dat$Quiz), by = 9) ) + 
-        scale_fill_gradient("Count", low = "coral3", high = "coral") +
-        geom_vline(xintercept = dat[dat$ID == {input$studentID}, ]$Quiz, colour = ggplotCol[2]) +
-        geom_vline(xintercept = mean(dat$Quiz), colour = ggplotCol[1]) +
-        xlab("Quiz Score") + 
-        ylab("# of students with the score in the range")+
-        ggtitle("Ave Quiz Score Histogram")+
-        theme_bw()
+    histAssignmentsCurvedAve <- 
+      ggplot(dat[1:nStudents, ], aes(CurvedAssignments)) + 
+      geom_histogram(aes(fill=..count..), colour = "black", 
+                     breaks = seq(min(dat$CurvedAssignments), max(dat$CurvedAssignments), by = 12) ) + 
+      scale_fill_gradient("Count", low = "gold4", high = "gold")+
+      geom_vline(xintercept = dat[dat$ID == {input$studentID}, ]$CurvedAssignments, 
+                 colour = ggplotCol[2]) +
+      geom_vline(xintercept = mean(dat$CurvedAssignments), colour = ggplotCol[1]) +
+      xlab("Assignments Score") + 
+      ylab("# of students with the score in the range")+
+      ggtitle("Assignments Score Histogram")+
+      theme_bw()
+    
+    multiplot( histExamAve, histAssignmentsCurvedAve, cols = 2)
+    
     })
     
-    # OnlineHW Average Histogram
-    output$histOnlineHW <- renderPlot({
-      ggplot(dat[1:nStudents, ], aes(OnlineHW)) + 
-        geom_histogram(aes(fill=..count..), colour = "black", breaks=seq(min(dat$OnlineHW), max(dat$OnlineHW), by = 9) ) + 
-        scale_fill_gradient("Count", low = "deepskyblue4", high = "deepskyblue")+
-        geom_vline(xintercept = as.integer(dat[dat$ID == {input$studentID}, ]$OnlineHW), colour = ggplotCol[2]) +
-        geom_vline(xintercept = mean(dat$OnlineHW), colour = ggplotCol[1]) +
-        xlab("OnlineHW Score") + 
-        ylab("# of students with the score in the range")+
-        ggtitle("Ave OnlineHW Score Histogram")+
-        theme_bw()
-    })
-    
-    # HW Average Histogram
-    output$histHW <- renderPlot({
-      ggplot(dat[1:nStudents, ], aes(HW)) + 
-        geom_histogram(aes(fill=..count..), colour = "black", breaks=seq(min(dat$HW), max(dat$HW), by = 11) ) + 
-        scale_fill_gradient("Count", low = "darkolivegreen4", high = "darkolivegreen1")+
-        geom_vline(xintercept = as.integer(dat[dat$ID == {input$studentID}, ]$HW), colour = ggplotCol[2]) +
-        geom_vline(xintercept = mean(dat$HW), colour = ggplotCol[1]) +
-        xlab("HW Score") + 
-        ylab("# of students with the score in the range")+
-        ggtitle("Ave HW Score Histogram")+
-        theme_bw()
-    })
-    
-    # MATLAB Assignment Average Histogram
-    output$histMATLAB <- renderPlot({
-      ggplot(dat[1:nStudents, ], aes(MATLAB)) + 
-        geom_histogram(aes(fill=..count..), colour = "black", breaks=seq(min(dat$MATLAB), max(dat$MATLAB), by = 20) ) + 
-        scale_fill_gradient("Count", low = "deeppink4", high = "deeppink1")+
-        geom_vline(xintercept = as.integer(dat[dat$ID == {input$studentID}, ]$MATLAB), colour = ggplotCol[2]) +
-        geom_vline(xintercept = mean(dat$MATLAB), colour = ggplotCol[1]) +
-        xlab("MATLAB Assignment Score") + 
-        ylab("# of students with the score in the range")+
-        ggtitle("Ave MATLAB Assignment Score Histogram")+
-        theme_bw()
-    })
+    # Plot Assignments Histograms    
+    output$histAssignments <- renderPlot({
+      histQuiz <- 
+       ggplot(dat[1:nStudents, ], aes(Quiz)) + 
+         geom_histogram(aes(fill=..count..), colour = "black", breaks = 
+                          seq(min(dat$Quiz), max(dat$Quiz), by = 12) ) + 
+         scale_fill_gradient("Count", low = "coral3", high = "coral") +
+         geom_vline(xintercept = dat[dat$ID == {input$studentID}, ]$Quiz, 
+                    colour = ggplotCol[2]) +
+         geom_vline(xintercept = mean(dat$Quiz), colour = ggplotCol[1]) +
+         xlab("Quiz Score") + 
+         ylab("Frequency")+
+         ggtitle("Ave Quiz Score Histogram")+
+         theme_bw()
+     
+     histHW <- 
+       ggplot(dat[1:nStudents, ], aes(HW)) + 
+       geom_histogram(aes(fill=..count..), colour = "black", breaks = 
+                        seq(min(dat$HW), max(dat$HW), by = 12) ) + 
+       scale_fill_gradient("Count", low = "darkolivegreen4", high = "darkolivegreen1")+
+       geom_vline(xintercept = as.integer(dat[dat$ID == {input$studentID}, ]$HW), 
+                  colour = ggplotCol[2]) +
+       geom_vline(xintercept = mean(dat$HW), colour = ggplotCol[1]) +
+       xlab("HW Score") + 
+       ylab("Frequency")+
+       ggtitle("Ave HW Score Histogram")+
+       theme_bw()
+     
+     histOnlineHW <-
+       ggplot(dat[1:nStudents, ], aes(OnlineHW)) + 
+         geom_histogram(aes(fill=..count..), colour = "black", breaks = 
+                          seq(min(dat$OnlineHW), max(dat$OnlineHW), by = 11) ) + 
+         scale_fill_gradient("Count", low = "deepskyblue4", high = "deepskyblue")+
+         geom_vline(xintercept = as.integer(dat[dat$ID == {input$studentID}, ]$OnlineHW), 
+                    colour = ggplotCol[2]) +
+         geom_vline(xintercept = mean(dat$OnlineHW), colour = ggplotCol[1]) +
+         xlab("OnlineHW Score") + 
+         ylab("Frequency")+
+         ggtitle("Ave OnlineHW Score Histogram")+
+         theme_bw()
+     
+     # MATLAB Assignment Average Histogram
+     histMATLAB <- 
+       ggplot(dat[1:nStudents, ], aes(MATLAB)) + 
+       geom_histogram(aes(fill=..count..), colour = "black", breaks = 
+                        seq(min(dat$MATLAB), max(dat$MATLAB), by = 20) ) + 
+       scale_fill_gradient("Count", low = "deeppink4", high = "deeppink1")+
+       geom_vline(xintercept = as.integer(dat[dat$ID == {input$studentID}, ]$MATLAB), 
+                  colour = ggplotCol[2]) +
+       geom_vline(xintercept = mean(dat$MATLAB), colour = ggplotCol[1]) +
+       xlab("MATLAB Assignment Score") + 
+       ylab("Frequency")+
+       ggtitle("Ave MATLAB Assignment Score Histogram")+
+       theme_bw()
+     
+     multiplot(histQuiz, histHW, histOnlineHW, histMATLAB, cols = 2)
+     
+   })
+     
   }
 )
