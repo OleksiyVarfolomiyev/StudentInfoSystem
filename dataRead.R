@@ -1,4 +1,4 @@
-dataRead <- function(nStudents=37, sheetName, fileUrl = "https://docs.google.com/spreadsheets/d/1tI5lHVKL5v8YvD4pEgmb-2rQ3ZJwzFuGk1hdeI4X2sA/pub?output=xlsx",
+dataRead <- function(nStudents=37, sheetName, 
                      fileName = "./data/MATH111-105_Roster.xlsx") {
   
   library(plyr)
@@ -8,7 +8,6 @@ dataRead <- function(nStudents=37, sheetName, fileUrl = "https://docs.google.com
   if (!file.exists("data")) dir.create("data")
   
   fileName = "./data/MATH_111-105_Roster.xlsx"
-  fileUrl <- "https://docs.google.com/spreadsheets/d/1f9IFGVNPdTsvFF7H1gjI1aRtlzOY96URMg_STNONVFQ/pub?output=xlsx"
   download.file(fileUrl, destfile = fileName, method = "curl")
   
   dateDownloaded <- date()
