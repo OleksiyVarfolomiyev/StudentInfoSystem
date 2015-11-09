@@ -1,4 +1,4 @@
-dataRead <- function(
+dataRead <- function(fileUrl = "https://docs.google.com/spreadsheets/d/1f9IFGVNPdTsvFF7H1gjI1aRtlzOY96URMg_STNONVFQ/pub?output=xlsx",
                      fileName = "./data/MATH111-105_Roster.xlsx", 
                      sheetName, nStudents, nCols) {
   
@@ -39,10 +39,13 @@ dataRead <- function(
     dat$Top <- paste(dat$Top, '%')
     dat[nrow(dat), ]$Top <- ''
   } # end of if sheetName == MATH111-105
-#   else 
-#     if (sheetName == "Quizzes") {
-
-#     }
+   else 
+     if (sheetName == "Quizzes") {
+      # delete empty columnts with the default names names X.*
+      colsDesired <- !grepl( "X", colnames(dat) )
+      #colDesired <- !grepl( "X", colnames(datQuizzes) )
+      dat <- dat[, colsDesired]
+     }
   
   dat
 }
