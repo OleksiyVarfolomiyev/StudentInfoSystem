@@ -1,5 +1,6 @@
-dataRead <- function(nStudents=37, sheetName, 
-                     fileName = "./data/MATH111-105_Roster.xlsx") {
+dataRead <- function(
+                     fileName = "./data/MATH111-105_Roster.xlsx", 
+                     sheetName, nStudents, nCols) {
   
   library(plyr)
   library(xlsx)
@@ -14,43 +15,34 @@ dataRead <- function(nStudents=37, sheetName,
   dateDownloaded 
   
   ## Read Data
-  nCols <- 20
-  
-  if(sheetName == "MATH111-105"){
-    
-  dat = read.xlsx2(fileName, endRow = nStudents+2, colIndex = seq(1,nCols), sheetName = "MATH111-105", stringsAsFactors = F)
-  
-  ## Process data 
-  # Rename columns
-  dat <- rename(dat,c("C2" = "Exam2", "C1" = "Exam1", "C3" = "Exam3", "F" = "Final", "M" = "MATLAB"))
+  dat = read.xlsx2(fileName, endRow = nStudents+2, colIndex = seq(1,nCols), sheetName = sheetName, stringsAsFactors = F)
   
   # Remove '%'
-  dat <- as.data.frame(sapply(dat, gsub, pattern="%", replacement=""), stringsAsFactors = F)
+  dat <- as.data.frame(sapply(dat, gsub, pattern = "%", replacement=""), stringsAsFactors = F)
   
-  # Add Rank column
-  dat$Rank = which(dat$ID==dat$ID)
-  dat[nrow(dat), ]$Rank = ""
-  
-  # Convert to integer
+  # Convert to integer, except Name column
   temp = dat$Name
   dat <- as.data.frame(sapply(dat, as.integer))
-  #dat$Name = as.character(dat$Name)
   dat$Name <- temp
-  dat$Top <- paste(dat$Top, '%')
-  dat[nrow(dat), ]$Top <- ''
-  } # end of if sheetName == MATH111-105
-  else 
-    if (sheetName == "Quizzes") {
-      dat = read.xlsx2(fileName, endRow = nStudents+2, sheetName = "Quizzes", stringsAsFactors = F)
-      # Remove '%'
-      dat <- as.data.frame(sapply(dat, gsub, pattern = "%", replacement = ""), stringsAsFactors = F)
+  dat[is.na(dat)] <- 0
   
-      # Convert to integer
-      temp = dat$Name
-      dat <- as.data.frame(sapply(dat, as.integer))
-      dat$Name <- temp
-      dat[is.na(dat)] <- 0
-    }
+  if(sheetName == "MATH111-105"){
+
+    # Rename columns
+    dat <- rename(dat,c("C2" = "Exam2", "C1" = "Exam1", "C3" = "Exam3", "F" = "Final", "M" = "MATLAB"))
+  
+    # Add Rank column
+    dat$Rank = which(dat$ID==dat$ID)
+    dat[nrow(dat), ]$Rank = ""
+    
+    # Add column 'Top', Every student is in top N%
+    dat$Top <- paste(dat$Top, '%')
+    dat[nrow(dat), ]$Top <- ''
+  } # end of if sheetName == MATH111-105
+#   else 
+#     if (sheetName == "Quizzes") {
+
+#     }
   
   dat
 }
